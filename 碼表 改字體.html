@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>數位碼錶 - 扁平化科技風</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <!-- Google Fonts: Orbitron / Share Tech Mono / LXGW WenKai TC -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800&family=Share+Tech+Mono&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            techBg: '#0b1320',
+            techCard: '#0f1c2e',
+            cyanGlow: '#00f2ff',
+            blueGlow: '#0088ff',
+            darkBtn: '#1b2a3f',
+            darkBtnHover: '#243752',
+            disabledBtn: '#121d2b',
+          },
+          fontFamily: {
+            mono: ['"Share Tech Mono"', 'monospace'],
+            tech: ['Orbitron', 'sans-serif'],
+            sans: ['"LXGW WenKai TC"', '"Noto Sans TC"', 'sans-serif'],
+          },
+          boxShadow: {
+            cyanGlow: '0 0 25px rgba(0, 242, 255, 0.45), inset 0 0 15px rgba(0, 242, 255, 0.25)',
+            btnGlow: '0 0 20px rgba(0, 242, 255, 0.6)',
+            ringGlow: '0 0 30px rgba(0, 200, 255, 0.35)',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background-color: #0b1320;
+      color: #e2e8f0;
+      font-family: 'LXGW WenKai TC', 'Noto Sans TC', sans-serif;
+      overflow-x: hidden;
+      user-select: none;
+    }
+
+    /* Circuit Background Canvas Effect */
+    .bg-circuit {
+      background-image: 
+        radial-gradient(circle at 50% 50%, rgba(0, 150, 255, 0.08) 0%, transparent 70%),
+        linear-gradient(rgba(0, 242, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 242, 255, 0.03) 1px, transparent 1px);
+      background-size: 100% 100%, 30px 30px, 30px 30px;
+    }
+
+    /* Outer Ring Rotating Glow Animation */
+    @keyframes rotateRing {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .rotate-active {
+      animation: rotateRing 12s linear infinite;
+    }
+
+    /* Pulse animation for active running state */
+    @keyframes pulseGlow {
+      0%, 100% { filter: drop-shadow(0 0 12px rgba(0, 242, 255, 0.6)); }
+      50% { filter: drop-shadow(0 0 22px rgba(0, 242, 255, 0.95)); }
+    }
+
+    .glow-pulse {
+      animation: pulseGlow 2s ease-in-out infinite;
+    }
+
+    /* Smooth transitions for SVG stroke dashboard */
+    .progress-ring__circle {
+      transition: stroke-dashoffset 0.1s linear;
+      transform: rotate(-90deg);
+      transform-origin: 50% 50%;
+    }
+
+    /* Custom scrollbar for lap log modal if opened */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f1c2e;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #0088ff;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body class="bg-techBg min-h-screen flex items-center justify-center p-4 bg-circuit relative">
+
+  <!-- SVG Sprite Definition Sheet -->
+  <svg class="hidden">
+    <defs>
+      <!-- 開始按鈕圖示 -->
+      <symbol id="icon-github" viewBox="0 0 24 24">
+        <path d="M8.713 18.042c-1.268 0.38-2.060 0.335-2.583 0.17-0.231-0.073-0.431-0.176-0.614-0.302-0.411-0.284-0.727-0.675-1.119-1.172-0.356-0.451-0.85-1.107-1.551-1.476-0.185-0.098-0.386-0.177-0.604-0.232-0.536-0.134-1.079 0.192-1.213 0.728s0.192 1.079 0.728 1.213c0.074 0.023 0.155 0.060 0.155 0.060 0.252 0.133 0.487 0.404 0.914 0.946 0.366 0.464 0.856 1.098 1.553 1.579 0.332 0.229 0.711 0.426 1.149 0.564 1.015 0.321 2.236 0.296 3.76-0.162 0.529-0.159 0.829-0.716 0.67-1.245s-0.716-0.829-1.245-0.67zM17 22v-3.792c0.052-0.684-0.056-1.343-0.292-1.942 0.777-0.171 1.563-0.427 2.297-0.823 2.083-1.124 3.496-3.242 3.496-6.923 0-1.503-0.516-2.887-1.379-3.981 0.355-1.345 0.226-2.726-0.293-3.933-0.122-0.283-0.359-0.482-0.634-0.564-0.357-0.106-1.732-0.309-4.373 1.362-2.273-0.541-4.557-0.509-6.646-0.002-2.639-1.669-4.013-1.466-4.37-1.36-0.296 0.088-0.521 0.3-0.635 0.565-0.554 1.292-0.624 2.672-0.292 3.932-0.93 1.178-1.387 2.601-1.379 4.017 0 3.622 1.389 5.723 3.441 6.859 0.752 0.416 1.56 0.685 2.357 0.867-0.185 0.468-0.286 0.961-0.304 1.456-0.005 0.141-0.003 0.283 0.005 0.424l0.001 3.838c0 0.552 0.448 1 1 1s1-0.448 1-1v-3.87c0-0.021-0.001-0.045-0.002-0.069-0.006-0.084-0.007-0.168-0.004-0.252 0.020-0.568 0.241-1.126 0.665-1.564 0.145-0.149 0.246-0.347 0.274-0.572 0.068-0.548-0.321-1.048-0.869-1.116-0.34-0.042-0.677-0.094-1.006-0.159-0.79-0.156-1.518-0.385-2.147-0.733-1.305-0.723-2.391-2.071-2.41-5.042 0.013-1.241 0.419-2.319 1.224-3.165 0.257-0.273 0.35-0.671 0.212-1.040-0.28-0.748-0.341-1.58-0.14-2.392 0.491 0.107 1.354 0.416 2.647 1.282 0.235 0.157 0.533 0.214 0.825 0.133 1.997-0.557 4.242-0.602 6.47 0.002 0.271 0.073 0.569 0.033 0.818-0.135 1.293-0.866 2.156-1.175 2.647-1.282 0.189 0.766 0.157 1.595-0.141 2.392-0.129 0.352-0.058 0.755 0.213 1.040 0.758 0.795 1.224 1.872 1.224 3.060 0 3.075-1.114 4.445-2.445 5.163-0.623 0.336-1.343 0.555-2.123 0.7-0.322 0.060-0.651 0.106-0.983 0.143-0.21 0.023-0.418 0.114-0.584 0.275-0.397 0.384-0.408 1.017-0.024 1.414 0.067 0.070 0.13 0.143 0.188 0.22 0.34 0.449 0.521 1.015 0.474 1.617 0 0.024-0.001 0.051-0.003 0.078v3.872c0 0.552 0.448 1 1 1s1-0.448 1-1z"></path>
+      </symbol>
+      
+      <!-- 重設按鈕圖示 -->
+      <symbol id="icon-gitlab" viewBox="0 0 24 24">
+        <path d="M23.238 15.199c0.261-0.17 0.493-0.446 0.635-0.764 0.172-0.385 0.214-0.831 0.075-1.305l-1.266-3.749-2.432-7.484c-0.068-0.229-0.195-0.443-0.397-0.637-0.266-0.242-0.603-0.367-0.941-0.372-0.351-0.005-0.707 0.119-0.976 0.365-0.165 0.147-0.296 0.334-0.378 0.547-0.006 0.015-0.012 0.033-0.018 0.052l-2.217 6.818h-6.647l-2.207-6.773c-0.068-0.229-0.195-0.443-0.397-0.637-0.265-0.242-0.602-0.367-0.94-0.372-0.351-0.006-0.707 0.118-0.976 0.365-0.166 0.146-0.296 0.334-0.379 0.546-0.006 0.016-0.012 0.034-0.018 0.052l-2.441 7.512-1.22 3.78c-0.106 0.329-0.117 0.676-0.038 1.004 0.098 0.407 0.336 0.783 0.702 1.052l10.65 7.74c0.346 0.248 0.818 0.26 1.176 0zM22.003 13.624l-10.003 7.27-9.983-7.255 1.205-3.662 1.886-5.805 1.891 5.808c0.137 0.42 0.525 0.687 0.951 0.69h8.1c0.442 0 0.817-0.287 0.951-0.691l1.886-5.804 1.892 5.824z"></path>
+      </symbol>
+
+      <!-- 暫停狀態圖示 -->
+      <symbol id="icon-pause" viewBox="0 0 24 24">
+        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+      </symbol>
+    </defs>
+  </svg>
+
+  <!-- Circuit Line Graphics (Left & Right Overlay decorative SVG) -->
+  <div class="absolute inset-0 pointer-events-none overflow-hidden opacity-30 flex justify-between items-center px-4 md:px-12">
+    <!-- Left Circuit -->
+    <svg class="w-48 h-96 hidden md:block" viewBox="0 0 200 400" fill="none" stroke="#00f2ff" stroke-width="1.5">
+      <path d="M 10 50 L 80 50 L 130 100 L 130 250 L 70 310 L 10 310" stroke-dasharray="4 4" />
+      <circle cx="10" cy="50" r="4" fill="#00f2ff" />
+      <circle cx="10" cy="310" r="4" fill="#00f2ff" />
+      <path d="M 30 120 L 90 120 L 150 180 L 190 180" />
+      <circle cx="190" cy="180" r="3" fill="#00f2ff" />
+    </svg>
+    
+    <!-- Right Circuit -->
+    <svg class="w-48 h-96 hidden md:block" viewBox="0 0 200 400" fill="none" stroke="#00f2ff" stroke-width="1.5">
+      <path d="M 190 50 L 120 50 L 70 100 L 70 250 L 130 310 L 190 310" stroke-dasharray="4 4" />
+      <circle cx="190" cy="50" r="4" fill="#00f2ff" />
+      <circle cx="190" cy="310" r="4" fill="#00f2ff" />
+      <path d="M 170 280 L 110 280 L 50 220 L 10 220" />
+      <circle cx="10" cy="220" r="3" fill="#00f2ff" />
+    </svg>
+  </div>
+
+  <!-- Main Container -->
+  <main class="relative w-full max-w-md bg-techCard/80 backdrop-blur-md rounded-3xl p-6 sm:p-8 border border-cyanGlow/20 shadow-2xl flex flex-col items-center justify-between min-h-[640px] z-10">
+
+    <!-- Top Navigation / Header -->
+    <header class="w-full flex items-center justify-between mb-2">
+      <button id="settingsBtn" title="設定" class="text-cyanGlow/70 hover:text-cyanGlow transition-colors duration-200 p-2 rounded-full hover:bg-white/5 active:scale-95">
+        <i class="fa-solid fa-gear text-2xl"></i>
+      </button>
+      <h1 class="text-xl sm:text-2xl font-bold tracking-widest text-slate-100 font-tech flex items-center gap-2">
+        <span>數位碼錶</span>
+      </h1>
+      <button id="lapListBtn" title="圈速紀錄" class="text-cyanGlow/70 hover:text-cyanGlow transition-colors duration-200 p-2 rounded-full hover:bg-white/5 active:scale-95 relative">
+        <i class="fa-solid fa-list-ol text-xl"></i>
+        <span id="lapBadge" class="hidden absolute -top-1 -right-1 bg-cyanGlow text-techBg text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">0</span>
+      </button>
+    </header>
+
+    <!-- Center Interactive Sci-Fi Dial Display -->
+    <section class="relative my-auto flex items-center justify-center py-4">
+      
+      <!-- Background Image container layer for the dial area -->
+      <div class="absolute w-[290px] h-[290px] sm:w-[310px] sm:h-[310px] rounded-full overflow-hidden shadow-[0_0_25px_rgba(0,242,255,0.25)] border border-cyanGlow/30">
+        <img src="https://i.postimg.cc/k4PQ1vwZ/e9b2c1b9310fa370205d4d217cc1f4fe.jpg" 
+             alt="Tech Background" 
+             class="w-full h-full object-cover opacity-90 mix-blend-luminosity hover:mix-blend-normal transition-all duration-500"
+             onerror="this.style.display='none'" />
+        <div class="absolute inset-0 bg-techBg/40 backdrop-brightness-90"></div>
+      </div>
+
+      <!-- Tech Circuit Lines around circle -->
+      <svg class="absolute w-[310px] h-[310px] pointer-events-none opacity-40" viewBox="0 0 300 300" fill="none" stroke="#00f2ff">
+        <path d="M 30 90 L 10 90 L 10 50 L -20 20" stroke-width="1.2" />
+        <circle cx="30" cy="90" r="2.5" fill="#00f2ff" />
+        <path d="M 10 210 L -10 210 L -20 230" stroke-width="1.2" />
+        <path d="M 270 90 L 290 90 L 310 70" stroke-width="1.2" />
+        <path d="M 270 210 L 290 210 L 310 210" stroke-width="1.2" />
+        <circle cx="270" cy="210" r="2.5" fill="#00f2ff" />
+      </svg>
+
+      <!-- SVG Ring Dashboard Display -->
+      <div class="relative w-[270px] h-[270px] sm:w-[290px] sm:h-[290px] flex items-center justify-center">
+        
+        <!-- Rotating Decorative Tech Notch Ring -->
+        <svg id="techRing" class="absolute inset-0 w-full h-full text-cyanGlow/40 opacity-70 transition-transform duration-700" viewBox="0 0 200 200">
+          <circle cx="100" cy="100" r="95" stroke="currentColor" stroke-width="1" fill="none" stroke-dasharray="3 6" />
+          <circle cx="100" cy="100" r="88" stroke="currentColor" stroke-width="1.5" fill="none" stroke-dasharray="15 35 5 35" />
+        </svg>
+
+        <!-- Dynamic Circular Stopwatch Progress Ring -->
+        <svg class="w-full h-full transform -rotate-90" viewBox="0 0 200 200">
+          <circle cx="100" cy="100" r="78" stroke="#132338" stroke-width="10" fill="none" />
+          <circle id="progressArc" class="progress-ring__circle" cx="100" cy="100" r="78" 
+                  stroke="url(#cyanGradient)" stroke-width="10" stroke-linecap="round" fill="none" 
+                  stroke-dasharray="490.08" stroke-dashoffset="0" />
+          <defs>
+            <linearGradient id="cyanGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#00f2ff" />
+              <stop offset="100%" stop-color="#0088ff" />
+            </linearGradient>
+          </defs>
+        </svg>
+
+        <!-- Center Digital Content Stack -->
+        <div class="absolute inset-0 flex flex-col items-center justify-center text-center p-4 z-10">
+          <div id="mainDisplay" class="font-mono text-3xl sm:text-4xl font-extrabold tracking-tight text-white drop-shadow-[0_0_12px_rgba(0,242,255,1)]">
+            00:00:00
+          </div>
+          <div id="msDisplay" class="font-mono text-lg sm:text-xl text-cyanGlow font-bold mt-[-2px] tracking-widest drop-shadow-[0_0_8px_rgba(0,242,255,0.8)]">
+            .00
+          </div>
+          <div class="mt-3 flex flex-col items-center gap-0.5 text-xs sm:text-sm font-mono text-slate-200 font-medium tracking-wider drop-shadow-md">
+            <div id="lapCountDisplay" class="text-cyanGlow font-semibold">
+              LAP: 00
+            </div>
+            <div id="totDisplay" class="text-slate-300">
+              TOT: 00:00:00.00
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Control Buttons -->
+    <footer class="w-full flex items-center justify-around gap-6 pt-4 pb-2">
+      
+      <!-- Left Button: Reset (重設) -->
+      <button id="resetBtn" disabled
+              class="w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-disabledBtn border border-slate-700/50 flex flex-col items-center justify-center text-slate-500 cursor-not-allowed opacity-50 transition-all duration-300 shadow-lg group">
+        <svg class="w-6 h-6 sm:w-8 sm:h-8 mb-1 fill-current group-hover:rotate-180 transition-transform duration-500">
+          <use href="#icon-gitlab"></use>
+        </svg>
+        <span class="text-base sm:text-lg font-bold tracking-wider">重設</span>
+      </button>
+
+      <!-- Right Button: Primary Start / Pause / Continue -->
+      <button id="startPauseBtn" 
+              class="w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-gradient-to-br from-cyanGlow to-blue-600 border-2 border-cyanGlow flex flex-col items-center justify-center text-slate-950 shadow-btnGlow cursor-pointer hover:scale-105 active:scale-95 transition-all duration-300 font-bold">
+        <svg class="w-6 h-6 sm:w-8 sm:h-8 mb-1 fill-current">
+          <use id="startPauseIconUse" href="#icon-github"></use>
+        </svg>
+        <span id="startPauseText" class="text-base sm:text-lg tracking-wider text-slate-950">開始</span>
+      </button>
+
+    </footer>
+
+    <!-- Lap Record Modal Overlay -->
+    <div id="lapModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300 z-50">
+      <div class="bg-techCard border border-cyanGlow/40 rounded-2xl w-full max-w-xs sm:max-w-md p-5 shadow-2xl flex flex-col max-h-[80vh]">
+        <div class="flex items-center justify-between border-b border-slate-700 pb-3 mb-3">
+          <h2 class="text-lg font-bold text-cyanGlow font-tech flex items-center gap-2">
+            <i class="fa-solid fa-stopwatch"></i> 圈速記錄 (Laps)
+          </h2>
+          <button id="closeLapModal" class="text-slate-400 hover:text-white text-xl p-1">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div id="lapListContainer" class="overflow-y-auto flex-1 space-y-2 pr-1 text-sm font-mono">
+          <p class="text-slate-500 text-center py-6">目前尚無圈速紀錄</p>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- JavaScript App Logic -->
+  <script>
+    let startTime = 0;
+    let elapsedTime = 0;
+    let timerInterval = null;
+    let isRunning = false;
+    let isPaused = false;
+    let lapTimes = [];
+    let lastLapTotalTime = 0;
+
+    const mainDisplay = document.getElementById('mainDisplay');
+    const msDisplay = document.getElementById('msDisplay');
+    const lapCountDisplay = document.getElementById('lapCountDisplay');
+    const totDisplay = document.getElementById('totDisplay');
+    
+    const startPauseBtn = document.getElementById('startPauseBtn');
+    const startPauseIconUse = document.getElementById('startPauseIconUse');
+    const startPauseText = document.getElementById('startPauseText');
+    
+    const resetBtn = document.getElementById('resetBtn');
+    const techRing = document.getElementById('techRing');
+    const progressArc = document.getElementById('progressArc');
+
+    const lapListBtn = document.getElementById('lapListBtn');
+    const lapModal = document.getElementById('lapModal');
+    const closeLapModal = document.getElementById('closeLapModal');
+    const lapListContainer = document.getElementById('lapListContainer');
+    const lapBadge = document.getElementById('lapBadge');
+
+    const CIRCUMFERENCE = 2 * Math.PI * 78;
+
+    function formatTime(ms) {
+      const totalSeconds = Math.floor(ms / 1000);
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+      const milliseconds = Math.floor((ms % 1000) / 10);
+
+      const pad = (num, size = 2) => String(num).padStart(size, '0');
+
+      return {
+        main: `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`,
+        ms: `.${pad(milliseconds)}`,
+        full: `${pad(hours)}:${pad(minutes)}:${pad(seconds)}.${pad(milliseconds)}`
+      };
+    }
+
+    function updateDisplay() {
+      const formatted = formatTime(elapsedTime);
+      mainDisplay.textContent = formatted.main;
+      msDisplay.textContent = formatted.ms;
+      totDisplay.textContent = `TOT: ${formatted.full}`;
+
+      const currentSecMs = elapsedTime % 60000;
+      const progressRatio = currentSecMs / 60000;
+      const offset = CIRCUMFERENCE - (progressRatio * CIRCUMFERENCE);
+      progressArc.style.strokeDashoffset = offset;
+    }
+
+    function startTimer() {
+      startTime = Date.now() - elapsedTime;
+      timerInterval = setInterval(() => {
+        elapsedTime = Date.now() - startTime;
+        updateDisplay();
+      }, 10);
+
+      isRunning = true;
+      isPaused = false;
+
+      startPauseText.textContent = '暫停';
+      startPauseIconUse.setAttribute('href', '#icon-pause');
+
+      enableResetBtn();
+
+      techRing.classList.add('rotate-active');
+      startPauseBtn.classList.add('glow-pulse');
+    }
+
+    function pauseTimer() {
+      clearInterval(timerInterval);
+      isRunning = false;
+      isPaused = true;
+
+      startPauseText.textContent = '繼續';
+      startPauseIconUse.setAttribute('href', '#icon-github');
+
+      techRing.classList.remove('rotate-active');
+      startPauseBtn.classList.remove('glow-pulse');
+    }
+
+    function resetTimer() {
+      clearInterval(timerInterval);
+      elapsedTime = 0;
+      isRunning = false;
+      isPaused = false;
+      lapTimes = [];
+      lastLapTotalTime = 0;
+
+      updateDisplay();
+      lapCountDisplay.textContent = 'LAP: 00';
+      lapBadge.textContent = '0';
+      lapBadge.classList.add('hidden');
+
+      startPauseText.textContent = '開始';
+      startPauseIconUse.setAttribute('href', '#icon-github');
+
+      progressArc.style.strokeDashoffset = 0;
+      techRing.classList.remove('rotate-active');
+      startPauseBtn.classList.remove('glow-pulse');
+
+      disableResetBtn();
+      renderLapList();
+    }
+
+    function enableResetBtn() {
+      resetBtn.disabled = false;
+      resetBtn.className = "w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-darkBtn hover:bg-darkBtnHover border border-cyanGlow/50 flex flex-col items-center justify-center text-cyanGlow cursor-pointer opacity-100 transition-all duration-300 shadow-lg active:scale-95 group";
+    }
+
+    function disableResetBtn() {
+      resetBtn.disabled = true;
+      resetBtn.className = "w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-disabledBtn border border-slate-700/50 flex flex-col items-center justify-center text-slate-500 cursor-not-allowed opacity-50 transition-all duration-300 shadow-lg group";
+    }
+
+    function recordLap() {
+      if (elapsedTime === 0) return;
+
+      const lapDuration = elapsedTime - lastLapTotalTime;
+      lastLapTotalTime = elapsedTime;
+
+      lapTimes.unshift({
+        lapNum: lapTimes.length + 1,
+        lapTime: formatTime(lapDuration).full,
+        totalTime: formatTime(elapsedTime).full
+      });
+
+      const padNum = String(lapTimes.length).padStart(2, '0');
+      lapCountDisplay.textContent = `LAP: ${padNum}`;
+      lapBadge.textContent = lapTimes.length;
+      lapBadge.classList.remove('hidden');
+
+      renderLapList();
+    }
+
+    function renderLapList() {
+      if (lapTimes.length === 0) {
+        lapListContainer.innerHTML = `<p class="text-slate-500 text-center py-6">目前尚無圈速紀錄</p>`;
+        return;
+      }
+
+      lapListContainer.innerHTML = lapTimes.map(item => `
+        <div class="flex items-center justify-between bg-slate-900/80 px-3 py-2 rounded-lg border border-slate-800 hover:border-cyanGlow/30 transition-colors">
+          <span class="text-cyanGlow font-bold"># ${String(item.lapNum).padStart(2, '0')}</span>
+          <span class="text-slate-200">分圈: ${item.lapTime}</span>
+          <span class="text-slate-400 text-xs">總計: ${item.totalTime}</span>
+        </div>
+      `).join('');
+    }
+
+    startPauseBtn.addEventListener('click', () => {
+      if (!isRunning) {
+        startTimer();
+      } else {
+        pauseTimer();
+      }
+    });
+
+    resetBtn.addEventListener('click', () => {
+      resetTimer();
+    });
+
+    lapListBtn.addEventListener('click', () => {
+      if (isRunning) {
+        recordLap();
+      }
+      lapModal.classList.remove('opacity-0', 'pointer-events-none');
+    });
+
+    closeLapModal.addEventListener('click', () => {
+      lapModal.classList.add('opacity-0', 'pointer-events-none');
+    });
+
+    lapModal.addEventListener('click', (e) => {
+      if (e.target === lapModal) {
+        lapModal.classList.add('opacity-0', 'pointer-events-none');
+      }
+    });
+
+    document.getElementById('settingsBtn').addEventListener('click', () => {
+      alert('【數位碼錶設定】\n• 模式：標準碼錶\n• 精度：1/100 秒 (毫秒)\n• 字型：LXGW WenKai TC');
+    });
+
+    updateDisplay();
+  </script>
+</body>
+</html>
